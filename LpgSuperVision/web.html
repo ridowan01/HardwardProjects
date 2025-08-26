@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>LPG Level Detector</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #e0f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: bold;
+            color: #000;
+        }
+
+        #header {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #header h1 {
+            margin: 0;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        #header p {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: 300;
+            color: #ccc;
+        }
+
+        #mainContainer {
+            max-width: 1000px;
+            background-color: white;
+            margin: 40px auto;
+            padding: 35px 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #statusBox {
+            margin-top: 35px;
+            padding: 18px;
+            background-color: #e0f2f1;
+            border-radius: 10px;
+            text-align: center;
+            color: #00796b;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
+        }
+
+        #contentFlex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        #barsContainer {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        #graphContainer {
+            flex: 1;
+            min-width: 250px;
+            height: 350px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #263238;
+            color: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="header">
+        <h1>LPG LEVEL DETECTOR</h1>
+        <p>Real-Time Gas Monitoring Dashboard</p>
+    </div>
+
+    <div id="mainContainer">
+        <div id="contentFlex">
+            <div id="barsContainer">
+                <p style="font-size: 20px;">Used Amount: <span id="usedVal">0%</span></p>
+                <div style="background-color: #ffebee; border-radius: 6px; overflow: hidden; height: 30px;">
+                    <div id="usedBar"
+                        style="background-color: #d32f2f; height: 100%; width: 0%; transition: width 0.5s;"></div>
+                </div>
+
+                <p style="font-size: 20px; margin-top: 30px;">Remaining Amount: <span id="remVal">100%</span></p>
+                <div style="background-color: #e8f5e9; border-radius: 6px; overflow: hidden; height: 30px;">
+                    <div id="remBar"
+                        style="background-color: #388e3c; height: 100%; width: 100%; transition: width 0.5s;"></div>
+                </div>
+
+                <div id="statusBox">
+                    <p id="statusText" style="font-size: 18px;">STATUS: System Normal</p>
+                </div>
+            </div>
+
+            <div id="graphContainer">
+                <canvas id="usageChart" width="400" height="350"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Powered by: LPG Projection Lab<br>
+        @ RoLL: 2303103 - 108
+    </footer>
+
+    <script>
+        function drawChart(labels, data) {
+            const canvas = document.getElementById('usageChart');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const padding = 50;
+            const chartHeight = canvas.height - padding * 2;
+            const chartWidth = canvas.width - padding * 2;
+            const maxVal = 100;
+            const stepY = 20;
+
+            // Draw axes
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, canvas.height - padding);
+            ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            ctx.stroke();
+
+            // Y-axis ticks and labels
+            ctx.fillStyle = '#000';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i <= maxVal; i += stepY) {
+                const y = canvas.height - padding - (i / maxVal) * chartHeight;
+                ctx.beginPath();
+                ctx.moveTo(padding - 5, y);
+                ctx.lineTo(padding, y);
+                ctx.stroke();
+                ctx.fillText(i + '%', padding - 10, y);
+            }
+
+            // X-axis ticks and labels (dynamic)
+            const stepX = chartWidth / (labels.length - 1);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            for (let i = 0; i < labels.length; i++) {
+                const x = padding + i * stepX;
+                ctx.beginPath();
+                ctx.moveTo(x, canvas.height - padding);
+                ctx.lineTo(x, canvas.height - padding + 5);
+                ctx.stroke();
+                ctx.fillText(labels[i], x, canvas.height - padding + 8);
+            }
+
+            // Plot line
+            ctx.beginPath();
+            ctx.strokeStyle = '#0077cc';
+            ctx.lineWidth = 2;
+            data.forEach((val, i) => {
+                const x = padding + i * stepX;
+                const y = canvas.height - padding - (val / maxVal) * chartHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+
+        function generateProjection(usedValue) {
+            const remainingStart = 100 - usedValue;
+            const totalDays = usedValue >= 95 ? 0.1 : usedValue >= 90 ? 2 : usedValue >= 80 ? 7 : usedValue >= 70 ? 15 : usedValue >= 60 ? 30 : usedValue >= 30 ? 40 : 50;
+
+            const labels = [];
+            const remainingValues = [];
+            let current = remainingStart;
+
+            const interval = Math.ceil(totalDays / 5);
+            for (let i = 0; i <= totalDays; i += interval) {
+                labels.push(`Day ${i}`);
+                remainingValues.push(parseFloat(current.toFixed(1)));
+
+                const step = remainingStart / (totalDays / interval);
+                const variation = step * (0.8 + Math.random() * 0.4);
+                current = Math.max(0, current - variation);
+            }
+
+            return { labels, remainingValues };
+        }
+
+
+        function setLPGLevel(usedValue) {
+            usedValue = Math.max(0, Math.min(100, usedValue));
+            const remaining = 100 - usedValue;
+
+            document.getElementById("usedVal").innerText = usedValue + "%";
+            document.getElementById("remVal").innerText = remaining + "%";
+            document.getElementById("usedBar").style.width = usedValue + "%";
+            document.getElementById("remBar").style.width = remaining + "%";
+
+            const statusBox = document.getElementById("statusBox");
+            const statusText = document.getElementById("statusText");
+            let status = "STATUS: System Normal";
+            let bgColor = "#e0f2f1";
+            let textColor = "#00796b";
+
+            if (remaining < 30 && remaining >= 10) {
+                status = "STATUS: LPG Getting Low";
+                bgColor = "#fff8e1";
+                textColor = "#f57c00";
+            }
+            if (remaining < 10 && remaining > 0) {
+                status = "STATUS: Critical! Refill Required";
+                bgColor = "#ffebee";
+                textColor = "#c62828";
+            }
+            if (remaining === 0) {
+                status = "STATUS: LPG Finished! Immediate Action Needed!";
+                bgColor = "#ffccbc";
+                textColor = "#b71c1c";
+            }
+
+            statusBox.style.backgroundColor = bgColor;
+            statusText.innerText = status;
+            statusText.style.color = textColor;
+
+            const projection = generateProjection(usedValue);
+            drawChart(projection.labels, projection.remainingValues);
+        }
+
+        setLPGLevel(98); // Example initialization
+    </script>
+</body>
+
+</html>
