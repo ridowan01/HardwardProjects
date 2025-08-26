@@ -28,7 +28,7 @@ This project is a NodeMCU-based project which efficiently presents the hidden LP
 
 ## ⚙️ Circuit Diagram
 
-> ![Circuit Diagram] (circuit_diagram.png)
+![Circuit Diagram](circuit_diagram.png)
 
 ---
 
@@ -55,7 +55,7 @@ This project is a NodeMCU-based project which efficiently presents the hidden LP
 
 ## 🧑‍🔧 Author
 
-Created by Md. Ridowan Ahmed 
+Created by Md. Ridowan Ahmed <br>
 free to reach out for collaboration or feedback!
 
 ---
